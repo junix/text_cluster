@@ -35,15 +35,17 @@ if __name__ == '__main__':
     records = tagExtraction.read_records()
     records = {record['id']: [record['productname'], record['description'], record['directoryname']] for record in records}
 
-    vectors_id = converter.read_vectors()
-    ids = list(vectors_id.keys())
-    vectors = list(vectors_id.values())
+    vec_dict = converter.read_vectors()
+    ids = list(vec_dict.keys())
+    vectors = list(vec_dict.values())
 
-    lda = LatentDirichletAllocation(n_topics=100)
-    lda_vectors = lda.fit_transform(vectors)
-    print_top_words(lda, tags, 20)
+    # LDA 降维
+    # lda = LatentDirichletAllocation(n_topics=100)
+    # lda_vectors = lda.fit_transform(vectors)
+    # print(lda_vectors)
+    # print_top_words(lda, tags, 20)
 
-    cls = KMeans(n_clusters=500).fit(lda_vectors)
+    cls = KMeans(n_clusters=500).fit(vectors)
     labels = cls.labels_
     label_map = dict(zip(ids, labels))
 
@@ -60,11 +62,11 @@ if __name__ == '__main__':
             output[v] = [k]
 
     for k, v in output.items():
-        print(k, len(v))
+        #print(k, len(v))
 
         sum = np.zeros(len(vectors[0]))
         for id in v:
-            na = np.array(vectors_id[id], dtype=np.float64)
+            na = np.array(vec_dict[id], dtype=np.float64)
             na[na != 0] = 1
             sum += na
         sum = sum.tolist()
