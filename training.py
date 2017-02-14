@@ -9,12 +9,14 @@ from sklearn.decomposition import LatentDirichletAllocation
 from convert_data import ConvertData
 from extarct_tags import TagExtraction
 
+
 def print_top_words(model, feature_names, n_top_words):
     for topic_idx, topic in enumerate(model.components_):
         print("Topic #%d:" % topic_idx)
         print(" ".join([feature_names[i]
                         for i in topic.argsort()[:-n_top_words - 1:-1]]))
     print()
+
 
 tagExtraction = TagExtraction('product', 'tags.json')
 converter = ConvertData('product')
@@ -62,7 +64,7 @@ def dump_cluster(label, tags, records):
 
 
 for k, v in output.items():
-    print(k, len(v))
+    #print(k, len(v))
 
     sum = np.zeros(len(vectors[0]))
     for id in v:
