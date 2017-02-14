@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os.path as osPath
+import os.path as op
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,20 +11,20 @@ from sklearn.preprocessing import normalize
 from mpl_toolkits.mplot3d import Axes3D
 
 
-class ConvertData():
-    def __init__(self, tableName, tags=[]):
+class ConvertData:
+    def __init__(self, table_name, tags=()):
         self.tags = tags
-        self.table = tableName
-        self._dirname = osPath.dirname(osPath.abspath(__file__))
-        self.vectors_path = osPath.join(self._dirname, self.table, 'vectors.json')
+        self.table = table_name
+        self._dirname = op.dirname(op.abspath(__file__))
+        self.vectors_path = op.join(self._dirname, self.table, 'vectors.json')
 
     def strings_to_vectors(self, corpus, k=5):
         vectorizer = CountVectorizer(vocabulary=self.tags)
         # transformer = TfidfTransformer()
-        tfidf = vectorizer.fit_transform(corpus) # transformer.fit_transform(vectorizer.fit_transform(corpus))
-        # tfidf = normalize(tfidf, norm='l2')
+        vec = vectorizer.fit_transform(corpus)  # transformer.fit_transform(vectorizer.fit_transform(corpus))
+        # vec = normalize(vec, norm='l2')
 
-        weight = tfidf.toarray()
+        # weight = vec.toarray()
         # weight = np.where(weight!=0, 1, 0)
         # for vector in weight:
         #     threshold = 0
@@ -53,12 +53,14 @@ class ConvertData():
         # ax.scatter(x, y, z)
         # plt.show()
 
-        return weight.tolist()
+        return vec.toarray().tolist()
 
+    # format: product_id:tf vectors
     def dump_vectors(self, records):
-        corpus_id = [[record['id'], record['description']] for record in records]
-        ids = [record[0] for record in corpus_id]
-        corpus = [record[1] for record in corpus_id]
+        ids, corpus = [], []
+        for r in records:
+            ids.append(r['id'])
+            corpus.append(r['description'])
 
         weight = self.strings_to_vectors(corpus)
         vectors = dict(zip(ids, weight))
@@ -76,16 +78,15 @@ if __name__ == '__main__':
 
     # from sklearn.decomposition import LatentDirichletAllocation
 
-    tag_extraction = TagExtraction('product', 'tags.json')
-    tags = tag_extraction.read_tags()
-    samples = tag_extraction.read_records()
-    corpus_id = [[sample['id'], ' '.join([sample['directoryname']] + [sample['productname']] + [sample['description']])]
-                 for sample in samples]
-    ids = [record[0] for record in corpus_id]
-    corpus = [record[1] for record in corpus_id]
+    e = TagExtraction('product', 'tags.json')
+    tags = e.read_tags()
+    rs = e.read_records()
+    # corpus_id = [[s['id'], ' '.join([s['directoryname']] + [s['productname']] + [s['description']])] for s in rs]
+    # ids = [record[0] for record in corpus_id]
+    # corpus = [record[1] for record in corpus_id]
 
     dataConverter = ConvertData('product', tags)
-    dataConverter.dump_vectors(samples)
+    dataConverter.dump_vectors(rs)
 
     # tf_vectorizer = CountVectorizer(vocabulary=tags)
     # tf = tf_vectorizer.fit_transform(corpus)

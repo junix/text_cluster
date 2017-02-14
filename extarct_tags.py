@@ -20,7 +20,7 @@ class TagExtraction:
         self.records_path = op.join(self._dirname, self.table, 'records.csv')
         self.tags_path = op.join(self._dirname, self.table, file_name)
 
-    def fetch_text(self):
+    def fetch_record_from_repo(self):
         sql = """
             SELECT
                 productId id,
@@ -30,32 +30,25 @@ class TagExtraction:
             FROM
                 {table}
         """.format(table=self.table)
-        records = self.conn_with_slave.fetch_records(sql)
+        # fmt: {'id': '1', 'productname': '谁是受欢迎的上司','description': '...', 'directoryname': '人际沟通'}
+        return self.conn_with_slave.fetch_records(sql)
 
-        # records = [
-        #   {'id': '1',
-        #    'productname': '谁是受欢迎的上司',
-        #    'description': '...',
-        #    'directoryname': '人际沟通'}
-        # ]
-        return records
-
-    def clean_text(self, records):
+    def filter_pos(self, records):
         pattern = re.compile(r'[\s+\d+\.\!\?\/_,$%^*()+\"\']+|[+——！，。？、~@#￥%……&*（）【】《》“”：；]')
-        for record in records:
-            for (k, v) in record.items():
+        for r in records:
+            for (k, v) in r.items():
                 if k == 'id' or k == 'directoryname':
                     continue
 
                 try:
                     words = self.cut_sentence_pos(re.sub(pattern, ' ', v))
-                    word_classes = ('n', 'ns', 'nt', 'nr', 'nx', 'vn', 'j', 'l', 'eng')
-                    words = [word for word, flag in words if len(word) > 1 and flag in word_classes]
-                    record[k] = ' '.join(words)
-                    record[k] = re.sub(r'\s+', ' ', record[k])
+                    word_pos = ('n', 'ns', 'nt', 'nr', 'nx', 'vn', 'j', 'l', 'eng')
+                    words = [word for word, flag in words if len(word) > 1 and flag in word_pos]
+                    r[k] = ' '.join(words)
+                    r[k] = re.sub(r'\s+', ' ', r[k])
                 except Exception as e:
                     print('fetch_text(): ', e)
-                    record[k] = ''
+                    r[k] = ''
         return records
 
     @classmethod
@@ -64,7 +57,7 @@ class TagExtraction:
         return pseg.cut(sentence)
 
     def dump_records(self):
-        records = self.clean_text(self.fetch_text())
+        records = self.filter_pos(self.fetch_record_from_repo())
         rows = records
         headers = rows[0].keys()
 
@@ -97,21 +90,14 @@ class TagExtraction:
         # return list(set(tags))
 
         vectorizer = CountVectorizer()
-        transformer = TfidfTransformer()
 
-        corpus = [','.join([record['productname'], record['description'], record['directoryname']]) for record in records]
-        tfidf = vectorizer.fit_transform(corpus) # transformer.fit_transform(vectorizer.fit_transform(corpus))
+        corpus = [','.join([r['productname'], r['description'], r['directoryname']]) for r in records]
+        vectorizer.fit_transform(corpus)
 
-        tfidf = tfidf.toarray()
-        featureNames = vectorizer.get_feature_names()
-        tags = featureNames
-        # tags = set()
-        # for weight in tfidf:
-        #     _ = list(zip(weight.tolist(), featureNames))
-        #     _topTags = heapq.nlargest(k, _, key=lambda x:x[0])
-        #     tags.update([pair[1] for pair in _topTags if pair[0]!=0])
+        # transformer = TfidfTransformer()
+        # transformer.fit_transform(vectorizer.fit_transform(corpus))
 
-        return list(tags)
+        return list(vectorizer.get_feature_names())
 
     def read_tags(self):
         with open(self.tags_path, encoding='utf-8') as f:
@@ -126,26 +112,6 @@ class TagExtraction:
 
 
 if __name__ == '__main__':
-    tag_extraction = TagExtraction('product', 'tags.json')
-    tag_extraction.dump_records()
-    tag_extraction.dump_tags(10000)
-
-    # from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-    #
-    # records = tag_extraction.read_records()
-    # corpus = [record['description'] for record in records]
-    # ids = [record['id'] for record in records]
-    #
-    # vectorizer = CountVectorizer()
-    # transformer = TfidfTransformer()
-    #
-    # tfidf = transformer.fit_transform(vectorizer.fit_transform(corpus))
-    # word = vectorizer.get_feature_names()
-    # weight = tfidf.toarray()
-    #
-    # vectors = {ids[index]: weight[index].tolist() for index in range(len(ids))}
-    # with open(tag_extraction.tags_path, 'w', encoding='utf-8') as f:
-    #         f.write(json.dumps(vectors, ensure_ascii=False))
-
-
-
+    e = TagExtraction('product', 'tags.json')
+    e.dump_records()
+    e.dump_tags(10000)
