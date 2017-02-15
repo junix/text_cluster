@@ -13,9 +13,8 @@ class ContentExtractor:
 
     def clean(self):
         if self.content_anchor:
-            self.data = [
-                l[self.trim_head:-self.trim_tail]
-                for l in self.data if self.content_anchor in l]
+            self.data = [s for s in self.data if self.content_anchor in s]
+        self.data = [s[self.trim_head:-self.trim_tail] for s in self.data]
 
     def __repr__(self):
         return self.file_path
