@@ -11,6 +11,6 @@ if __name__ == 'main':
                     path,
                     encoding='gb18030',
                     content_anchor='<content>',
-                    trim_head='<content>',
-                    trim_tail='</content>')
+                    trim_head_len=len('<content>'),
+                    trim_tail_len=len('</content>'))
                 c.dump_cut()

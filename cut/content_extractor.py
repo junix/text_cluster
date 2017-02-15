@@ -2,15 +2,20 @@ import jieba
 
 
 class ContentExtractor:
-    def __init__(self, file_path, encoding=None, content_anchor=None, trim_head='', trim_tail=''):
+    def __init__(self, file_path, encoding=None, content_anchor=None, trim_head_len=0, trim_tail_len=0):
         self.file_path = file_path
+        self.trim_head = trim_head_len
+        self.trim_tail = trim_tail_len
+        self.content_anchor = content_anchor
         with open(file_path, 'r', encoding=encoding) as f:
-            if content_anchor:
-                head_len = len(trim_head)
-                tail_len = len(trim_tail)
-                self.data = [l[head_len:-tail_len] for l in f.readlines() if content_anchor in l]
-            else:
-                self.data = f.readlines()
+            self.data = f.readlines()
+        self.clean()
+
+    def clean(self):
+        if self.content_anchor:
+            self.data = [
+                l[self.trim_head:-self.trim_tail]
+                for l in self.data if self.content_anchor in l]
 
     def __repr__(self):
         return self.file_path
