@@ -1,23 +1,16 @@
-import os
 import jieba
 
 
 class ContentExtractor:
-    @classmethod
-    def cut_dir_and_dump(cls, dirname='/Users/junix/ml/data/txt', encoding='gb18030'):
-        for root, _, files in os.walk(dirname):
-            for f in files:
-                if f.endswith('.txt'):
-                    path = '{root}/{file}'.format(root=root, file=f)
-                    c = ContentExtractor(path, encoding=encoding)
-                    c.dump_cut()
-
-    def __init__(self, file_path, encoding=None):
+    def __init__(self, file_path, encoding=None, content_anchor=None, trim_head='', trim_tail=''):
         self.file_path = file_path
         with open(file_path, 'r', encoding=encoding) as f:
-            head_len = len('<content>')
-            tail_len = len('</content>')
-            self.data = [l[head_len:-tail_len] for l in f.readlines() if '<content>' in l]
+            if content_anchor:
+                head_len = len(trim_head)
+                tail_len = len(trim_tail)
+                self.data = [l[head_len:-tail_len] for l in f.readlines() if content_anchor in l]
+            else:
+                self.data = f.readlines()
 
     def __repr__(self):
         return self.file_path
